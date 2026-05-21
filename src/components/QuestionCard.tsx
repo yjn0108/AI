@@ -1,5 +1,5 @@
 import { Question } from '../types';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Lightbulb } from 'lucide-react';
 
 interface Props {
   question: Question;
@@ -26,11 +26,11 @@ export default function QuestionCard({
   const isWrong = submitted && userAnswer !== null && userAnswer !== question.correct;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="card overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-blue-50 flex items-center justify-between bg-gradient-to-r from-primary-50/50 to-white">
         <span className="text-sm font-medium text-gray-500">
-          第 <span className="text-gray-900 font-bold text-base">{index + 1}</span> / {total} 题
+          第 <span className="text-primary-700 font-bold text-base">{index + 1}</span> / {total} 题
         </span>
         {submitted && (
           <span className={`flex items-center gap-1.5 text-sm font-semibold ${isCorrect ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -60,16 +60,16 @@ export default function QuestionCard({
           }
 
           const styles: Record<typeof state, string> = {
-            default: 'border-gray-200 bg-white hover:border-gray-400 hover:bg-gray-50 cursor-pointer',
-            selected: 'border-blue-500 bg-blue-50 cursor-pointer',
+            default: 'border-gray-200 bg-white hover:border-primary-400 hover:bg-primary-50/50 cursor-pointer',
+            selected: 'border-primary-500 bg-primary-50 cursor-pointer shadow-sm shadow-primary-500/10',
             correct: 'border-emerald-500 bg-emerald-50',
             wrong: 'border-red-400 bg-red-50',
-            reveal: 'border-gray-200 bg-white opacity-60',
+            reveal: 'border-gray-100 bg-gray-50/50 opacity-50',
           };
 
           const letterStyles: Record<typeof state, string> = {
-            default: 'bg-gray-100 text-gray-600',
-            selected: 'bg-blue-500 text-white',
+            default: 'bg-gray-100 text-gray-600 group-hover:bg-primary-100 group-hover:text-primary-600',
+            selected: 'bg-primary-500 text-white',
             correct: 'bg-emerald-500 text-white',
             wrong: 'bg-red-400 text-white',
             reveal: 'bg-gray-100 text-gray-400',
@@ -80,7 +80,7 @@ export default function QuestionCard({
               key={i}
               disabled={submitted}
               onClick={() => onAnswer(i)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-150 ${styles[state]}`}
+              className={`group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-150 ${styles[state]}`}
             >
               <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${letterStyles[state]}`}>
                 {optionLetters[i]}
@@ -101,9 +101,11 @@ export default function QuestionCard({
 
       {/* Explanation */}
       {submitted && (
-        <div className="mx-6 mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="text-xs font-semibold text-amber-700 mb-1">解析</p>
-          <p className="text-sm text-amber-900 leading-relaxed">{question.explanation}</p>
+        <div className="mx-6 mb-5 p-4 bg-primary-50 border border-primary-200 rounded-xl">
+          <p className="text-xs font-semibold text-primary-700 mb-1.5 flex items-center gap-1.5">
+            <Lightbulb size={13} /> 解析
+          </p>
+          <p className="text-sm text-primary-900 leading-relaxed">{question.explanation}</p>
         </div>
       )}
 
@@ -113,9 +115,7 @@ export default function QuestionCard({
           <button
             onClick={onSubmit}
             disabled={userAnswer === null}
-            className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-150
-              disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed
-              bg-gray-900 text-white hover:bg-gray-700 active:scale-[0.98]"
+            className="btn-primary"
           >
             提交答案
           </button>

@@ -8,61 +8,76 @@ interface Props {
 }
 
 const icons: Record<Subject, React.ReactNode> = {
-  data_structures: <BookOpen size={22} />,
-  os: <HardDrive size={22} />,
-  computer_org: <Cpu size={22} />,
-  networks: <Globe size={22} />,
+  data_structures: <BookOpen size={20} />,
+  os: <HardDrive size={20} />,
+  computer_org: <Cpu size={20} />,
+  networks: <Globe size={20} />,
 };
 
-const colors: Record<Subject, { bg: string; border: string; icon: string; ring: string }> = {
+const accents: Record<Subject, { icon: string; iconBg: string; selectedIconBg: string; border: string; bg: string; ring: string }> = {
   data_structures: {
-    bg: 'bg-sky-50',
-    border: 'border-sky-200',
-    icon: 'text-sky-600 bg-sky-100',
-    ring: 'ring-sky-400',
+    icon: 'text-blue-600',
+    iconBg: 'bg-blue-50',
+    selectedIconBg: 'bg-blue-100',
+    border: 'border-blue-300',
+    bg: 'bg-blue-50/60',
+    ring: 'ring-blue-400',
   },
   os: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    icon: 'text-emerald-600 bg-emerald-100',
-    ring: 'ring-emerald-400',
+    icon: 'text-cyan-600',
+    iconBg: 'bg-cyan-50',
+    selectedIconBg: 'bg-cyan-100',
+    border: 'border-cyan-300',
+    bg: 'bg-cyan-50/60',
+    ring: 'ring-cyan-400',
   },
   computer_org: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    icon: 'text-amber-600 bg-amber-100',
-    ring: 'ring-amber-400',
+    icon: 'text-sky-600',
+    iconBg: 'bg-sky-50',
+    selectedIconBg: 'bg-sky-100',
+    border: 'border-sky-300',
+    bg: 'bg-sky-50/60',
+    ring: 'ring-sky-400',
   },
   networks: {
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    icon: 'text-rose-600 bg-rose-100',
-    ring: 'ring-rose-400',
+    icon: 'text-indigo-600',
+    iconBg: 'bg-indigo-50',
+    selectedIconBg: 'bg-indigo-100',
+    border: 'border-indigo-300',
+    bg: 'bg-indigo-50/60',
+    ring: 'ring-indigo-400',
   },
 };
 
 export default function SubjectCard({ subject, selected, onClick }: Props) {
-  const c = colors[subject];
+  const a = accents[subject];
   return (
     <button
       onClick={onClick}
       className={`
-        w-full text-left p-5 rounded-xl border-2 transition-all duration-200
-        ${selected ? `${c.bg} ${c.border} ring-2 ${c.ring} shadow-sm` : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'}
-      `}
+        w-full text-left p-5 rounded-xl border-2 transition-all duration-200 group
+        ${selected
+          ? `${a.bg} ${a.border} ring-2 ${a.ring} shadow-sm`
+          : 'bg-white border-gray-200 hover:border-primary-300 hover:shadow-sm'
+        }`}
     >
       <div className="flex items-start gap-3">
-        <span className={`p-2 rounded-lg ${selected ? c.icon : 'text-gray-500 bg-gray-100'} transition-colors`}>
+        <span className={`p-2.5 rounded-xl transition-colors duration-200 ${selected ? a.selectedIconBg : a.iconBg} ${a.icon}`}>
           {icons[subject]}
         </span>
-        <div>
-          <div className={`font-semibold text-sm ${selected ? 'text-gray-900' : 'text-gray-700'}`}>
+        <div className="min-w-0">
+          <div className={`font-semibold text-sm transition-colors ${selected ? 'text-primary-900' : 'text-gray-700 group-hover:text-primary-700'}`}>
             {SUBJECT_LABELS[subject]}
           </div>
           <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
             {SUBJECT_DESCRIPTIONS[subject]}
           </div>
         </div>
+        {selected && (
+          <div className="ml-auto shrink-0 mt-1">
+            <span className="w-2 h-2 bg-primary-500 rounded-full pulse-soft" />
+          </div>
+        )}
       </div>
     </button>
   );
