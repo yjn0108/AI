@@ -1,0 +1,103 @@
+import { Question } from '../types';
+import { CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react';
+
+interface Props {
+  questions: Question[];
+  userAnswers: (number | null)[];
+  score: number;
+  onRestart: () => void;
+  onHome: () => void;
+}
+
+export default function ScoreBoard({ questions, userAnswers, score, onRestart, onHome }: Props) {
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+
+  const grade =
+    pct >= 90 ? { label: '优秀', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' } :
+    pct >= 75 ? { label: '良好', color: 'text-sky-600', bg: 'bg-sky-50 border-sky-200' } :
+    pct >= 60 ? { label: '及格', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' } :
+    { label: '需加强', color: 'text-red-500', bg: 'bg-red-50 border-red-200' };
+
+  const radius = 52;
+  const circ = 2 * Math.PI * radius;
+  const dash = (pct / 100) * circ;
+
+  return (
+    <div className="space-y-6">
+      {/* Score card */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+        <h2 className="text-lg font-semibold text-gray-700 mb-6">本次练习结果</h2>
+
+        {/* Ring */}
+        <div className="flex justify-center mb-4">
+          <svg width="140" height="140" className="-rotate-90">
+            <circle cx="70" cy="70" r={radius} fill="none" stroke="#f3f4f6" strokeWidth="12" />
+            <circle
+              cx="70" cy="70" r={radius} fill="none"
+              stroke={pct >= 90 ? '#10b981' : pct >= 75 ? '#0ea5e9' : pct >= 60 ? '#f59e0b' : '#ef4444'}
+              strokeWidth="12"
+              strokeDasharray={`${dash} ${circ}`}
+              strokeLinecap="round"
+              style={{ transition: 'stroke-dasharray 0.8s ease' }}
+            />
+          </svg>
+          <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: '30px' }}>
+            <span className={`text-4xl font-bold ${grade.color}`}>{pct}<span className="text-2xl">%</span></span>
+            <span className="text-sm text-gray-500">{score}/{total} 题</span>
+          </div>
+        </div>
+
+        <div className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${grade.bg} ${grade.color} mb-2`}>
+          {grade.label}
+        </div>
+        <p className="text-gray-500 text-sm">答对 {score} 题，答错 {total - score} 题</p>
+      </div>
+
+      {/* Answer breakdown */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-700">答题详情</h3>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {questions.map((q, i) => {
+            const ua = userAnswers[i];
+            const correct = ua === q.correct;
+            return (
+              <div key={i} className="px-5 py-4 flex items-start gap-3">
+                <span className={`mt-0.5 shrink-0 ${correct ? 'text-emerald-500' : 'text-red-400'}`}>
+                  {correct ? <CheckCircle size={17} /> : <XCircle size={17} />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 leading-snug line-clamp-2">{q.question}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {!correct && ua !== null && (
+                      <span className="text-red-500">你选: {['A','B','C','D'][ua]} &nbsp;·&nbsp; </span>
+                    )}
+                    <span className="text-emerald-600">正确: {['A','B','C','D'][q.correct]}</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={onHome}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all"
+        >
+          <Home size={16} /> 更换科目
+        </button>
+        <button
+          onClick={onRestart}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-900 text-sm font-semibold text-white hover:bg-gray-700 transition-all"
+        >
+          <RotateCcw size={16} /> 再练一次
+        </button>
+      </div>
+    </div>
+  );
+}
