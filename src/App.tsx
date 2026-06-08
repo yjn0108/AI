@@ -3,15 +3,19 @@ import { supabase, FUNCTIONS_URL, ANON_KEY } from './lib/supabase';
 import { Subject, Question, SUBJECT_LABELS } from './types';
 import SubjectCard from './components/SubjectCard';
 import QuestionCard from './components/QuestionCard';
-import ScoreBoard from './components/ScoreBoard';
-import { GraduationCap, Loader2, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import LearningReport from './components/LearningReport';
+import LearningDashboard from './components/LearningDashboard';
+import WrongQuestions from './components/WrongQuestions';
+import { GraduationCap, Loader2, ChevronLeft, ChevronRight, BookOpen, LayoutDashboard, FileQuestion, Home } from 'lucide-react';
 
 type Phase = 'setup' | 'quiz' | 'result';
+type Page = 'home' | 'quiz' | 'dashboard' | 'wrong-questions';
 
 const SUBJECTS: Subject[] = ['data_structures', 'os', 'computer_org', 'networks'];
 const COUNTS = [5, 10, 15];
 
 export default function App() {
+  const [page, setPage] = useState<Page>('home');
   const [phase, setPhase] = useState<Phase>('setup');
   const [subject, setSubject] = useState<Subject>('data_structures');
   const [count, setCount] = useState(10);
@@ -24,7 +28,8 @@ export default function App() {
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
 
-  const startQuiz = useCallback(async () => {
+  const startQuiz = useCallback(async (subjectParam?: Subject) => {
+    const subj = subjectParam || subject;
     setLoading(true);
     try {
       const res = await fetch(`${FUNCTIONS_URL}/generate-questions`, {
@@ -33,13 +38,13 @@ export default function App() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${ANON_KEY}`,
         },
-        body: JSON.stringify({ subject, count }),
+        body: JSON.stringify({ subject: subj, count }),
       });
       const { questions: qs } = await res.json() as { questions: Question[] };
 
       const { data: session } = await supabase
         .from('quiz_sessions')
-        .insert({ subject, total_questions: qs.length })
+        .insert({ subject: subj, total_questions: qs.length })
         .select('id')
         .single();
 
@@ -50,6 +55,7 @@ export default function App() {
       setCurrent(0);
       setScore(0);
       setPhase('quiz');
+      setPage('quiz');
     } finally {
       setLoading(false);
     }
@@ -90,9 +96,50 @@ export default function App() {
     if (allDone) {
       if (sessionId) {
         await supabase.from('quiz_sessions').update({ correct_count: newScore, completed: true }).eq('id', sessionId);
+
+        // Update user_stats
+        const { data: existingStats } = await supabase
+          .from('user_stats')
+          .select('*')
+          .eq('subject', subject)
+          .single();
+
+        if (existingStats) {
+          await supabase
+            .from('user_stats')
+            .update({
+              total_sessions: (existingStats as any).total_sessions + 1,
+              total_questions: (existingStats as any).total_questions + questions.length,
+              correct_answers: (existingStats as any).correct_answers + newScore,
+              wrong_answers: (existingStats as any).wrong_answers + (questions.length - newScore),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('subject', subject);
+        } else {
+          await supabase.from('user_stats').insert({
+            subject,
+            total_sessions: 1,
+            total_questions: questions.length,
+            correct_answers: newScore,
+            wrong_answers: questions.length - newScore,
+          });
+        }
       }
       setTimeout(() => setPhase('result'), 600);
     }
+  };
+
+  const handleGoHome = () => {
+    setPage('home');
+    setPhase('setup');
+  };
+
+  const goToDashboard = () => {
+    setPage('dashboard');
+  };
+
+  const goToWrongQuestions = () => {
+    setPage('wrong-questions');
   };
 
   const answeredCount = submitted.filter(Boolean).length;
@@ -103,14 +150,43 @@ export default function App() {
       {/* Header */}
       <header className="gradient-header sticky top-0 z-10 shadow-lg shadow-primary-900/10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+          <button
+            onClick={handleGoHome}
+            className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm hover:bg-white/30 transition-colors"
+          >
             <GraduationCap size={18} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-white leading-none">考研408练习系统</h1>
+          </button>
+          <div className="flex-1">
+            <h1 className="text-sm font-bold text-white leading-none">考研408智能学习系统</h1>
             <p className="text-xs text-primary-200 leading-none mt-0.5">数据结构 · 操作系统 · 组成原理 · 计算机网络</p>
           </div>
-          {phase === 'quiz' && (
+
+          {/* Navigation */}
+          <nav className="flex items-center gap-1">
+            <button
+              onClick={handleGoHome}
+              className={`p-2 rounded-lg transition-colors ${page === 'home' ? 'bg-white/30' : 'hover:bg-white/20'}`}
+              title="首页"
+            >
+              <Home size={16} className="text-white" />
+            </button>
+            <button
+              onClick={goToDashboard}
+              className={`p-2 rounded-lg transition-colors ${page === 'dashboard' ? 'bg-white/30' : 'hover:bg-white/20'}`}
+              title="学习分析"
+            >
+              <LayoutDashboard size={16} className="text-white" />
+            </button>
+            <button
+              onClick={goToWrongQuestions}
+              className={`p-2 rounded-lg transition-colors ${page === 'wrong-questions' ? 'bg-white/30' : 'hover:bg-white/20'}`}
+              title="错题本"
+            >
+              <FileQuestion size={16} className="text-white" />
+            </button>
+          </nav>
+
+          {phase === 'quiz' && page === 'quiz' && (
             <div className="ml-auto flex items-center gap-2">
               <span className="text-xs text-primary-200 font-medium">{answeredCount}/{questions.length}</span>
               <div className="w-24 h-1.5 bg-primary-800/40 rounded-full overflow-hidden">
@@ -124,20 +200,37 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* Setup Phase */}
-        {phase === 'setup' && (
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Home Page */}
+        {page === 'home' && (
           <div className="space-y-6 fade-in">
             {/* Hero section */}
             <div className="text-center py-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 mb-4">
                 <BookOpen size={28} className="text-primary-600" />
               </div>
-              <h2 className="text-2xl font-bold text-primary-900 mb-2">考研408 智能练习</h2>
+              <h2 className="text-2xl font-bold text-primary-900 mb-2">考研408 智能学习</h2>
               <p className="text-sm text-gray-500 max-w-xs mx-auto leading-relaxed">
                 选择科目与题量，系统随机抽取题目，每题含详细解析
               </p>
             </div>
+
+            {/* Quick Stats */}
+            <button
+              onClick={goToDashboard}
+              className="card w-full p-4 flex items-center justify-between hover:border-primary-300 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+                  <LayoutDashboard size={20} className="text-primary-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-gray-800">学习分析</div>
+                  <div className="text-xs text-gray-500">查看学习进度与薄弱科目</div>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-gray-400 group-hover:text-primary-600 transition-colors" />
+            </button>
 
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -179,7 +272,7 @@ export default function App() {
             </div>
 
             <button
-              onClick={startQuiz}
+              onClick={() => startQuiz()}
               disabled={loading}
               className="btn-primary flex items-center justify-center gap-2"
             >
@@ -188,8 +281,24 @@ export default function App() {
           </div>
         )}
 
-        {/* Quiz Phase */}
-        {phase === 'quiz' && questions.length > 0 && (
+        {/* Dashboard Page */}
+        {page === 'dashboard' && (
+          <LearningDashboard
+            onStartQuiz={(subj) => {
+              setSubject(subj);
+              startQuiz(subj);
+            }}
+            onViewWrongQuestions={goToWrongQuestions}
+          />
+        )}
+
+        {/* Wrong Questions Page */}
+        {page === 'wrong-questions' && (
+          <WrongQuestions onBack={handleGoHome} />
+        )}
+
+        {/* Quiz Page */}
+        {page === 'quiz' && phase === 'quiz' && questions.length > 0 && (
           <div className="space-y-4 fade-in">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 bg-primary-50 px-3 py-1 rounded-full">
@@ -258,14 +367,15 @@ export default function App() {
         )}
 
         {/* Result Phase */}
-        {phase === 'result' && (
+        {page === 'quiz' && phase === 'result' && (
           <div className="fade-in">
-            <ScoreBoard
+            <LearningReport
               questions={questions}
               userAnswers={userAnswers}
               score={score}
-              onRestart={startQuiz}
-              onHome={() => setPhase('setup')}
+              subject={subject}
+              onRestart={() => startQuiz()}
+              onHome={handleGoHome}
             />
           </div>
         )}

@@ -20,6 +20,36 @@ export interface QuizState {
   loading: boolean;
 }
 
+export interface UserStats {
+  subject: Subject;
+  total_sessions: number;
+  total_questions: number;
+  correct_answers: number;
+  wrong_answers: number;
+}
+
+export interface WrongQuestion {
+  id: string;
+  question_text: string;
+  options: string[];
+  correct_answer: number;
+  user_answer: number;
+  explanation: string;
+  subject: Subject;
+  created_at: string;
+}
+
+export interface LearningReport {
+  score: number;
+  total: number;
+  accuracy: number;
+  subject: Subject;
+  subjectAccuracy: number;
+  weakSubjects: Subject[];
+  suggestions: string[];
+  wrongQuestions: WrongQuestion[];
+}
+
 export const SUBJECT_LABELS: Record<Subject, string> = {
   data_structures: '数据结构',
   os: '操作系统',
